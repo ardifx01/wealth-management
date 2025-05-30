@@ -200,7 +200,7 @@ class TransactionResource extends Resource
                             $data["amount"] = $currencyRepository->convert($data["amount"], $data["currency"], $wallet->currency);
                         }
 
-                        $wallet->income($data["amount"], $data["descrption"]);
+                        $wallet->expense($data["amount"], $data["descrption"]);
                     }),
                 Tables\Actions\Action::make("transfer")
                     ->form([

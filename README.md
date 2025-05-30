@@ -2,28 +2,27 @@
 
 ![Preview](./.github/assets/thumb.png)
 
-Sistem manajemen transaksi dan saldo pengguna berbasis Laravel + Filament. Menyediakan fitur pemantauan saldo secara harian, bulanan, YTD (Year-to-Date), dan keseluruhan, dengan dukungan wallet dan transaksi income/expense.
+A Laravel + Filament-based transaction and wallet management system. Provides real-time balance monitoring by day, month, year-to-date (YTD), and all-time, complete with multi-wallet and income/expense tracking.
 
-> *"Jika kamu tidak menemukan cara untuk menghasilkan uang saat tidur, kamu akan bekerja sampai mati."*  
+> *"If you don't find a way to make money while you sleep, you will work until you die."*
 > — Warren Buffett
 
 ---
 
-## 🚀 Fitur Utama
+## 🚀 Key Features
 
-- 📈 Statistik saldo real-time (harian, bulanan, YTD, semua)
-- 🧾 Pencatatan transaksi (income dan expense)
-- 👛 Multi-wallet per pengguna
-- 🔐 Autentikasi pengguna dengan Laravel
-- 🧪 Seeder dummy untuk pengujian data transaksi
+* 📈 Real-time balance statistics (daily, weekly, monthly, YTD, all-time)
+* 🧾 Transaction logging (income, expense, and inter-wallet transfers)
+* 👛 Multiple wallets per user
+* 🔐 User authentication with Laravel
 
 ---
 
-## 🛠️ Instalasi
+## 🛠️ Installation
 
 ```bash
-git clone https://github.com/yourusername/yourproject.git
-cd yourproject
+git clone https://github.com/fiandev/wealth-management.git
+cd wealth-management
 
 cp .env.example .env
 composer install
@@ -31,5 +30,3 @@ php artisan key:generate
 php artisan migrate --seed
 php artisan serve
 ```
-
----

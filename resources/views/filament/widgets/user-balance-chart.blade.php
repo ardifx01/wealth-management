@@ -1,3 +1,9 @@
+<style>
+    .filament-widgets-chart-widget canvas {
+        max-height: 100vh !important;
+    }
+</style>
+
 <div>
     {{ $this->form }}
 

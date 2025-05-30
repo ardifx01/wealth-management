@@ -29,12 +29,40 @@ class UserBalanceChart extends ChartWidget
             'all' => 'Semua',
         ];
     }
+
     protected static bool $isLazy = true;
 
     protected static ?array $options = [
+        'responsive' => true,
+        'maintainAspectRatio' => true,
         'plugins' => [
+            'tooltip' => [
+                'enabled' => true,
+            ],
             'legend' => [
                 'display' => true,
+            ],
+        ],
+        'scales' => [
+            'y' => [
+                'type' => 'linear',
+                'display' => true,
+                'position' => 'left',
+            ],
+            'y1' => [
+                'type' => 'linear',
+                'display' => true,
+                'position' => 'right',
+                'grid' => [
+                    'drawOnChartArea' => false,
+                ],
+
+            ],
+            'x' => [
+                'ticks' => [
+                    'autoSkip' => true,
+                    'maxTicksLimit' => 0, // batasi jumlah label X biar gak numpuk
+                ],
             ],
         ],
     ];
@@ -48,7 +76,7 @@ class UserBalanceChart extends ChartWidget
         if ($previousBalance == 0) {
             return $currentBalance == 0
                 ? "saldo kamu tidak berubah dari selama periodeini!"
-                : sprintf("saldo kamu %s dari awal periode ini!", "+".$currentBalance."%");
+                : sprintf("saldo kamu %s dari awal periode ini!", "+" . $currentBalance . "%");
         }
 
         $percentageChange = (($currentBalance - $previousBalance) / abs($previousBalance)) * 100;

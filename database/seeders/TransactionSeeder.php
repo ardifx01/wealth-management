@@ -24,9 +24,9 @@ class TransactionSeeder extends Seeder
 
         foreach ($wallets as $wallet) {
             // Buat transaksi random sebanyak 50 transaksi per wallet dalam rentang waktu 1 tahun terakhir
-            for ($i = 0; $i < 1000; $i++) {
+            for ($i = 0; $i < 100; $i++) {
                 $type = ['income', 'expense'][array_rand(['income', 'expense'])];
-                $amount = $type === 'income' ? rand(100000, 10000000) : rand(1000, 10000);
+                $amount = $type === 'income' ? rand(100000, 10000000) : rand(100000, 10000000);
 
                 // Random tanggal dalam 365 hari terakhir
                 $createdAt = Carbon::now()->subDays(rand(0, 365))->setTime(rand(0, 23), rand(0, 59), rand(0, 59));

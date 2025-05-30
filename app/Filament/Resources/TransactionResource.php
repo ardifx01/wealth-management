@@ -14,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Number;
 
 class TransactionResource extends Resource
@@ -150,7 +151,8 @@ class TransactionResource extends Resource
                             ->searchable()
                             ->native(false)
                             ->required(),
-                        Forms\Components\Textarea::make("descrption")
+                        Forms\Components\TextInput::make("descrption")
+                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
 
                     ])
                     ->requiresConfirmation()
@@ -184,7 +186,9 @@ class TransactionResource extends Resource
                             ->searchable()
                             ->native(false)
                             ->required(),
-                        Forms\Components\Textarea::make("descrption")
+                        Forms\Components\TextInput::make("descrption")
+                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+
                     ])
                     ->requiresConfirmation()
                     ->color("danger")
@@ -218,7 +222,9 @@ class TransactionResource extends Resource
                             ->native(false)
                             ->searchable()
                             ->required(),
-                        Forms\Components\Textarea::make("descrption")
+                        Forms\Components\TextInput::make("descrption")
+                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+
                     ])
                     ->requiresConfirmation()
                     ->color("info")

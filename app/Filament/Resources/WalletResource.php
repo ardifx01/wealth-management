@@ -13,8 +13,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Enums\WalletType;
+use App\Models\Transaction;
 use App\Repositories\CurrencyRepository;
 use App\Repositories\WalletRepository;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Number;
 
 class WalletResource extends Resource
@@ -57,7 +59,7 @@ class WalletResource extends Resource
     {
         $currencyRepository = app(CurrencyRepository::class);
         $detailCurrencies = $currencyRepository->getDetails();
-
+        // dd(Auth::user()->transactions);
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make("name")
@@ -95,7 +97,7 @@ class WalletResource extends Resource
                             ->label("Wallet")
                             ->options(Wallet::all()->pluck("name", "id")->toArray())
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn($state, callable $set) => $set("currency", Wallet::find($state)->currency))
+                            ->afterStateUpdated(fn($state, callable $set) => $state && $set("currency", Wallet::find($state)->currency))
                             ->native(false)
                             ->searchable()
                             ->required(),
@@ -106,7 +108,8 @@ class WalletResource extends Resource
                             ->searchable()
                             ->native(false)
                             ->required(),
-                        Forms\Components\Textarea::make("descrption")
+                        Forms\Components\TextInput::make("descrption")
+                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
 
                     ])
                     ->requiresConfirmation()
@@ -140,7 +143,9 @@ class WalletResource extends Resource
                             ->searchable()
                             ->native(false)
                             ->required(),
-                        Forms\Components\Textarea::make("descrption")
+                        Forms\Components\TextInput::make("descrption")
+                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+
                     ])
                     ->requiresConfirmation()
                     ->color("danger")
@@ -174,7 +179,9 @@ class WalletResource extends Resource
                             ->native(false)
                             ->searchable()
                             ->required(),
-                        Forms\Components\Textarea::make("descrption")
+                        Forms\Components\TextInput::make("descrption")
+                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+
                     ])
                     ->requiresConfirmation()
                     ->color("info")

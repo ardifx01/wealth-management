@@ -19,7 +19,6 @@ class Wallet extends Model
     public function getBalanceAttribute()
     {
         $balance = $this->transactions()
-            ->whereNull("reference_id")
             ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as balance")
             ->value("balance");
         return floatval($balance);

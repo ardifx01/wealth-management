@@ -112,7 +112,7 @@ class TransactionResource extends Resource
                 Tables\Columns\TextColumn::make('description')
                     ->default("-"),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->date(),
+                    ->dateTime(),
             ])
             ->searchable()
             ->filters([
@@ -172,6 +172,7 @@ class TransactionResource extends Resource
                             ->disabled(),
                     ])
                     ->modalWidth('md'),
+                Tables\Actions\EditAction::make(),
             ])
             ->headerActions([
                 Tables\Actions\Action::make("incomes")
@@ -262,7 +263,6 @@ class TransactionResource extends Resource
                             ->required(),
                         Forms\Components\TextInput::make("descrption")
                             ->datalist(fn() => Auth::user()->transactions->pluck("description")->toArray())
-
                     ])
                     ->requiresConfirmation()
                     ->color("info")

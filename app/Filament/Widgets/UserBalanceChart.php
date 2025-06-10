@@ -18,6 +18,7 @@ class UserBalanceChart extends ChartWidget
     public ?string $type = '';
     public string $chartType = 'line';
     public $wallet;
+    protected static ?int $sort = 2;
 
     protected function getFilters(): ?array
     {

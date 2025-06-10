@@ -21,8 +21,10 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Resources\UserResource;
 use App\Filament\Resources\RoleResource;
 use App\Filament\Resources\PermissionResource;
+use App\Filament\Widgets\BalanceAllocationChart;
 use App\Filament\Widgets\BalanceOverview;
 use App\Filament\Widgets\UserBalanceChart;
+use App\Filament\Widgets\UserTransactionCompareChart;
 use App\Http\Middleware\RecurringMiddleware;
 use Illuminate\Support\Facades\Blade;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
@@ -51,6 +53,8 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 UserBalanceChart::class,
                 BalanceOverview::class,
+                UserTransactionCompareChart::class,
+                BalanceAllocationChart::class,
             ])
             ->navigationGroups([
                 NavigationGroup::make()

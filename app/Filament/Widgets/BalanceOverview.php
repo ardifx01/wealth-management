@@ -14,7 +14,7 @@ use Illuminate\Support\Number;
 
 class BalanceOverview extends BaseWidget
 {
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 1;
 
     public function getColumnSpan(): int|string
     {

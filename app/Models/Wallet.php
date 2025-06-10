@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Repositories\CurrencyRepository;
+use App\Repositories\WalletRepository;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Number;
@@ -82,8 +84,31 @@ class Wallet extends Model
         ]);
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class, "wallet_id", "id");
+    }
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($wallet) {
+            $wallet->transactions()->delete();
+            WalletRepository::refreshUserWallets($wallet->user);
+        });
+
+        static::created(function ($wallet) {
+            WalletRepository::refreshUserWallets($wallet->user);
+        });
+
+        static::updated(function ($wallet) {
+            WalletRepository::refreshUserWallets($wallet->user);
+        });
     }
 }

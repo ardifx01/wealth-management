@@ -9,10 +9,12 @@ use App\Models\Wallet;
 use App\Repositories\CurrencyRepository;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Number;
@@ -27,7 +29,46 @@ class TransactionResource extends Resource
     {
         return $form
             ->schema([
-                //
+                Forms\Components\Select::make('type')
+                    ->label('Tipe')
+                    ->default(fn(Transaction $record) => $record ? ($record->reference_id ? 'Transfer' : ucfirst($record->type)) : null)
+                    ->options([
+                        'expense' => 'Expense',
+                        'income' => 'Income',
+                    ])
+                    ->hidden(fn(Get $get) => $get('reference_id'))
+                    ->native(false)
+                    ->searchable()
+                    ->live()
+                    ->required(),
+                Forms\Components\Hidden::make('reference_id'),
+                Forms\Components\Select::make("destionation_id")
+                    ->label("Destination Wallet")
+                    ->options(Wallet::all()->pluck("name", "id")->toArray())
+                    ->native(false)
+                    ->searchable()
+                    ->live()
+                    ->hidden(fn(Get $get) => $get('type') !== 'transfer')
+                    ->required(),
+                Forms\Components\TextInput::make('wallet_id')
+                    ->label('Dompet')
+                    ->formatStateUsing(fn(Transaction $record) => $record->wallet->name)
+                    ->disabled()
+                    ->required(),
+                Forms\Components\TextInput::make('amount')
+                    ->label('Jumlah')
+                    ->prefix(fn(Transaction $record) => $record->wallet->currency)
+                    ->default(fn(Transaction $record) => $record->amount)
+                    ->required(),
+                Forms\Components\Textarea::make('description')
+                    ->label('Deskripsi')
+                    ->default(fn(Transaction $record) => $record->description ?? '-'),
+                Forms\Components\DateTimePicker::make('created_at')
+                    ->label('Dibuat Pada')
+                    ->native(false)
+                    ->default(fn(Transaction $record) => $record->created_at->format('d-m-Y H:i'))
+                    ->required(),
+
             ]);
     }
 
@@ -36,10 +77,11 @@ class TransactionResource extends Resource
         return false;
     }
 
-    // disable edit
-    public static function canEdit($record): bool
+    public static function canEdit(Model $record): bool
     {
-        return false;
+        /* @var \App\Models\User $user */
+        $user = Auth::user();
+        return !$record->reference_id && !$user->transactions->firstWhere('reference_id', $record->id);
     }
 
     public static function query(): Builder
@@ -152,7 +194,7 @@ class TransactionResource extends Resource
                             ->native(false)
                             ->required(),
                         Forms\Components\TextInput::make("descrption")
-                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+                            ->datalist(fn() => Auth::user()->transactions->pluck("description")->toArray())
 
                     ])
                     ->requiresConfirmation()
@@ -187,7 +229,7 @@ class TransactionResource extends Resource
                             ->native(false)
                             ->required(),
                         Forms\Components\TextInput::make("descrption")
-                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+                            ->datalist(fn() => Auth::user()->transactions->pluck("description")->toArray())
 
                     ])
                     ->requiresConfirmation()
@@ -209,21 +251,17 @@ class TransactionResource extends Resource
                         Forms\Components\Select::make("origin_id")
                             ->label("Origin Wallet")
                             ->options(Wallet::all()->pluck("name", "id")->toArray())
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn($state, callable $set) => $set("currency", Wallet::find($state)->currency))
                             ->native(false)
                             ->searchable()
                             ->required(),
                         Forms\Components\Select::make("destionation_id")
                             ->label("Destination Wallet")
                             ->options(Wallet::all()->pluck("name", "id")->toArray())
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn($state, callable $set) => $set("currency", Wallet::find($state)->currency))
                             ->native(false)
                             ->searchable()
                             ->required(),
                         Forms\Components\TextInput::make("descrption")
-                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+                            ->datalist(fn() => Auth::user()->transactions->pluck("description")->toArray())
 
                     ])
                     ->requiresConfirmation()

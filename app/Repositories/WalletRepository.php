@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\User;
 use App\Models\Wallet;
+use Illuminate\Support\Facades\Cache;
 
 class WalletRepository
 {
@@ -18,7 +19,14 @@ class WalletRepository
 
     public function getByUser(User $user)
     {
-        return $this->wallet->where('user_id', $user->id)->get();
+        return Cache::forever(sprintf("user_wallets_%s", $user->id), function () use ($user) {
+            return $this->wallet->where('user_id', $user->id)->get();
+        });
+    }
+
+    public static function refreshUserWallets(User $user)
+    {
+        Cache::forget(sprintf("user_wallets_%s", $user->id));
     }
 
     public function store(array $data)

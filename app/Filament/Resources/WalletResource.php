@@ -109,7 +109,7 @@ class WalletResource extends Resource
                             ->native(false)
                             ->required(),
                         Forms\Components\TextInput::make("descrption")
-                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+                            ->datalist(fn() => Auth::user()->transactions->pluck("description")->toArray())
 
                     ])
                     ->requiresConfirmation()
@@ -144,8 +144,7 @@ class WalletResource extends Resource
                             ->native(false)
                             ->required(),
                         Forms\Components\TextInput::make("descrption")
-                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
-
+                            ->datalist(fn() => Auth::user()->transactions->pluck("description")->toArray())
                     ])
                     ->requiresConfirmation()
                     ->color("danger")
@@ -166,21 +165,17 @@ class WalletResource extends Resource
                         Forms\Components\Select::make("origin_id")
                             ->label("Origin Wallet")
                             ->options(Wallet::all()->pluck("name", "id")->toArray())
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn($state, callable $set) => $set("currency", Wallet::find($state)->currency))
                             ->native(false)
                             ->searchable()
                             ->required(),
                         Forms\Components\Select::make("destionation_id")
                             ->label("Destination Wallet")
                             ->options(Wallet::all()->pluck("name", "id")->toArray())
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn($state, callable $set) => $set("currency", Wallet::find($state)->currency))
                             ->native(false)
                             ->searchable()
                             ->required(),
                         Forms\Components\TextInput::make("descrption")
-                            ->datalist(fn () => Auth::user()->transactions->pluck("description")->toArray())
+                            ->datalist(fn() => Auth::user()->transactions->pluck("description")->toArray())
 
                     ])
                     ->requiresConfirmation()

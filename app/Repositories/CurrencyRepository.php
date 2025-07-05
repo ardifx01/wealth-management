@@ -15,26 +15,32 @@ class CurrencyRepository
     public function __construct()
     {
         $this->localCurrency = env("LOCAL_CURRENCY", "USD");
-
+        
+        if (empty($this->details)) {
+          Cache::forget("currency_details");
+        }
+        if (empty($this->currencies)) {
+          Cache::forget("list_currencies");
+        }
+        if (empty($this->rates)) {
+          Cache::forget("rates");
+        }
+        
         $this->details = Cache::remember("currency_details", now()->addDay(), function () {
             return Http::get("https://gist.githubusercontent.com/ksafranski/2973986/raw/5fda5e87189b066e11c1bf80bbfbecb556cf2cc1/Common-Currency.json")->json();
         });
-
+        
         $this->currencies = Cache::remember("list_currencies", now()->addMonth(), function () {
             $response = Http::get(sprintf("https://api.exchangerate.host/list?access_key=%s", env("EXCHANGE_RATE_APIKEY")));
             $data = $response->json();
             return $data['currencies'] ?? [];
         });
-
+        
         $this->rates = Cache::remember("rates", now()->addDay(), function () {
-            $response = Http::get(sprintf(
-                "https://api.exchangerate.host/live?access_key=%s&base=%s",
-                env("EXCHANGE_RATE_APIKEY"),
-                strtoupper(env("LOCAL_CURRENCY", "USD"))
-            ));
+            $response = Http::get("https://api.frankfurter.app/latest?from=USD");
             $data = $response->json();
 
-            return $data['quotes'] ?? [];
+            return $data ?? [];
         });
 
         $this->details = array_intersect_key($this->details, $this->currencies);
@@ -58,42 +64,39 @@ class CurrencyRepository
 
     public function detectBaseCurrency(): ?string
     {
-        $firstKey = array_key_first($this->rates);
-
-        if ($firstKey && preg_match('/^[A-Z]{6}$/', $firstKey)) {
-            // Misalnya: "USDIDR" → ambil "USD"
-            return substr($firstKey, 0, 3);
-        }
-
-        return null; // fallback kalau format tidak valid
+        return $this->rates["base"] ?? "USD"; // fallback kalau format tidak valid
     }
 
     public function convert(float $amount, string $from, string $to): float
-    {
-        $base = $this->detectBaseCurrency();
+  {
+      $base = $this->detectBaseCurrency();
+  
+      $from = strtoupper($from);
+      $to = strtoupper($to);
+  
+      if ($from === $to) {
+          return $amount;
+      }
+  
+      $rateFrom = $this->rates["rates"][$from] ?? 1;
+      $rateTo = $this->rates["rates"][$to] ?? 1;
 
-        $from = strtoupper($from);
-        $to = strtoupper($to);
-
-        if ($from === $to) {
-            return $amount;
-        }
-
-        $rateFrom = $this->rates["{$base}{$from}"] ?? null;
-        $rateTo = $this->rates["{$base}{$to}"] ?? null;
-
-        if ($to === $base) {
-            return $amount / $rateFrom;
-        }
-
-        if ($from == $base) {
-            return $amount * $rateTo;
-        }
-
-        if ($rateFrom && $rateTo) {
-            return $amount / $rateFrom * $rateTo;
-        }
-
-        return $amount;
-    }
+      if ($from === $base && $rateTo !== null) {
+          return $amount * $rateTo;
+      }
+  
+      if ($to === $base && $rateFrom !== null) {
+          return $amount / $rateFrom;
+      }
+      
+      if ($to === $base && $rateTo !== null) {
+          return $amount * $rateTo;
+      }
+  
+      if ($rateFrom !== null && $rateTo !== null) {
+          return ($amount / $rateFrom) * $rateTo;
+      }
+  
+      return $amount;
+  }
 }

@@ -28,6 +28,11 @@ class WalletRepository
     {
         Cache::forget(sprintf("user_wallets_%s", $user->id));
     }
+    
+    public static function refreshWalletById (int $walletId)
+    {
+        Cache::forget(sprintf("balances.wallet.%s", $walletId));
+    }
 
     public function store(array $data)
     {

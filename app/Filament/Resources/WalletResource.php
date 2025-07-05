@@ -58,8 +58,8 @@ class WalletResource extends Resource
     public static function table(Table $table): Table
     {
         $currencyRepository = app(CurrencyRepository::class);
-        $detailCurrencies = $currencyRepository->getDetails();
-        // dd(Auth::user()->transactions);
+        $detailCurrencies = app(CurrencyRepository::class)->getDetails();
+        
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make("name")

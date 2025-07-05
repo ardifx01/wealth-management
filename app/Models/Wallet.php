@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Number;
+use Illuminate\Support\Facades\Cache;
 
 class Wallet extends Model
 {
@@ -20,9 +21,12 @@ class Wallet extends Model
 
     public function getBalanceAttribute()
     {
-        $balance = $this->transactions()
+        $balance = Cache::remember(sprintf("balances.wallet.%s", $this->id), now()->addHour(), function(){
+          return $this->transactions()
             ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as balance")
             ->value("balance");
+        });
+        
         return floatval($balance);
     }
 
@@ -101,14 +105,17 @@ class Wallet extends Model
         static::deleting(function ($wallet) {
             $wallet->transactions()->delete();
             WalletRepository::refreshUserWallets($wallet->user);
+            WalletRepository::refreshWalletById($wallet->id);
         });
 
         static::created(function ($wallet) {
             WalletRepository::refreshUserWallets($wallet->user);
+            WalletRepository::refreshWalletById($wallet->id);
         });
 
         static::updated(function ($wallet) {
             WalletRepository::refreshUserWallets($wallet->user);
+            WalletRepository::refreshWalletById($wallet->id);
         });
     }
 }

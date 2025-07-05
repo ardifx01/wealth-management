@@ -7,27 +7,28 @@ use Illuminate\Support\Facades\Http;
 
 class CurrencyRepository
 {
-    protected $currencies = [];
+    public $currencies = [];
     protected $rates = [];
-    protected $details = [];
+    public $details = [];
     public string $localCurrency;
 
     public function __construct()
     {
         $this->localCurrency = env("LOCAL_CURRENCY", "USD");
         
-        if (empty($this->details)) {
-          Cache::forget("currency_details");
-        }
-        if (empty($this->currencies)) {
-          Cache::forget("list_currencies");
-        }
-        if (empty($this->rates)) {
-          Cache::forget("rates");
-        }
+//         if (!$this->details) {
+//           Cache::forget("currency_details");
+//         }
+//         if (!$this->currencies) {
+//           Cache::forget("list_currencies");
+//         }
+//         if (!$this->rates) {
+//           Cache::forget("rates");
+//         }
         
         $this->details = Cache::remember("currency_details", now()->addDay(), function () {
-            return Http::get("https://gist.githubusercontent.com/ksafranski/2973986/raw/5fda5e87189b066e11c1bf80bbfbecb556cf2cc1/Common-Currency.json")->json();
+            return Http::get("https://gist.githubusercontent.com/ksafranski/2973986/raw/5fda5e87189b066e11c1bf80bbfbecb556cf2cc1/Common-Currency.json")
+              ->json();
         });
         
         $this->currencies = Cache::remember("list_currencies", now()->addMonth(), function () {
@@ -47,19 +48,19 @@ class CurrencyRepository
     }
 
 
-    public function getCurrencies()
+    public function getCurrencies(): array
     {
-        return $this->currencies;
+        return Cache::get("list_currencies");
     }
 
-    public function getRates()
+    public function getRates(): array
     {
-        return $this->rates;
+        return Cache::get("rates");
     }
 
-    public function getDetails()
+    public function getDetails(): array
     {
-        return $this->details;
+        return Cache::get("currency_details");
     }
 
     public function detectBaseCurrency(): ?string

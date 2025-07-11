@@ -15,7 +15,7 @@ class BalanceAllocationChart extends ChartWidget
 {
 
     protected static ?string $heading = 'Alokasi Saldo Wallet';
-    public ?string $type = '';
+    public ?string $type = 'all';
     public string $chartType = 'doughnut';
     public $wallet;
     protected static ?int $sort = 3;
@@ -25,7 +25,7 @@ class BalanceAllocationChart extends ChartWidget
             'all' => 'Semua Wallet',
             'positive' => 'Saldo Positif',
             'negative' => 'Saldo Negatif',
-            'active' => 'Wallet Aktif',
+            'empty' => 'Wallet Kosong',
         ];
     }
 
@@ -38,15 +38,6 @@ class BalanceAllocationChart extends ChartWidget
         'plugins' => [
             'tooltip' => [
                 'enabled' => true,
-                'callbacks' => [
-                    'label' => 'function(context) {
-                        var label = context.label || "";
-                        var value = context.parsed;
-                        var total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        var percentage = ((value / total) * 100).toFixed(1);
-                        return label + ": Rp " + value.toLocaleString("id-ID") + " (" + percentage + "%)";
-                    }'
-                ]
             ],
             'legend' => [
                 'display' => true,
@@ -107,15 +98,23 @@ class BalanceAllocationChart extends ChartWidget
                     return $balance > 0;
                 case 'negative':
                     return $balance < 0;
-                case 'active':
-                    return $balance != 0; // Non-zero balance
+                case 'empty':
+                    return $balance == 0; 
                 case 'all':
                 default:
                     return true;
             }
         });
-
-        return $filteredWallets->map(function ($wallet) {
+        
+        return $filteredWallets->map(function ($wallet) use ($filteredWallets, $type) {
+            if ($type == "empty") {
+              return [
+                  'name' => $wallet->name,
+                  'balance' => 1 / $filteredWallets->count(),
+                  'currency' => $wallet->currency,
+                  'id' => $wallet->id,
+              ];
+            }
             return [
                 'name' => $wallet->name,
                 'balance' => $wallet->convertBalanceWithBaseCurrency(),
@@ -180,14 +179,11 @@ class BalanceAllocationChart extends ChartWidget
         $chartBorderColors = [];
 
         foreach ($walletData as $index => $wallet) {
-            $balance = abs($wallet['balance']); // Use absolute value for chart display
-
-            if ($balance > 0) { // Only show wallets with non-zero balance
-                $chartData[] = $balance;
-                $labels[] = $wallet['name'] . ($wallet['balance'] < 0 ? ' (Hutang)' : '');
-                $backgroundColors[] = $colors[$index % count($colors)];
-                $chartBorderColors[] = $borderColors[$index % count($borderColors)];
-            }
+              $balance = abs($wallet['balance']); // Use absolute value for chart display
+              $chartData[] = $balance;
+              $labels[] = $wallet['name'] . ($wallet['balance'] < 0 ? ' (Hutang)' : '');
+              $backgroundColors[] = $colors[$index % count($colors)];
+              $chartBorderColors[] = $borderColors[$index % count($borderColors)];
         }
 
         // If no wallets with balance, show placeholder

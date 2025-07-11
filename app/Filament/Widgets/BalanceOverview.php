@@ -31,31 +31,39 @@ class BalanceOverview extends BaseWidget
         $currencyRepository = app(CurrencyRepository::class);
 
         return collect(WalletType::cases())
-            ->map(fn($case) => $case->value)
-            ->map(function ($category) use ($currencyRepository) {
-                $wallet = Wallet::where('category', $category)->first();
-
-                if (!$wallet) return null;
-
-                $balance = $wallet->convertBalanceWithBaseCurrency();
-
-                // Simulasi data chart. Gantilah ini dengan data historis saldo jika tersedia.
-                $chartData = collect(range(6, 0)) // 7 hari terakhir
-                    ->map(function ($daysAgo) use ($wallet) {
-                        $date = now()->subDays($daysAgo)->endOfDay();
-
+        ->map(fn($case) => $case->value)
+        ->map(function ($category) use ($currencyRepository) {
+            // Get all wallets for the given category
+            $wallets = Wallet::where('category', $category)->get();
+    
+            // Skip if no wallets found
+            if ($wallets->isEmpty()) return null;
+    
+            // Calculate total balance in base currency across all wallets
+            $balance = $wallets->sum(function ($wallet) use ($currencyRepository) {
+                return $wallet->convertBalanceWithBaseCurrency();
+            });
+    
+            // Simulate chart data: total amount of all transactions per day over the last 7 days
+            $chartData = collect(range(6, 0)) // Last 7 days
+                ->map(function ($daysAgo) use ($wallets) {
+                    $date = now()->subDays($daysAgo)->endOfDay();
+    
+                    return $wallets->sum(function ($wallet) use ($date) {
                         return $wallet->transactions()
-                            ->where('created_at', '<=', $date)
+                            ->whereDate('created_at', '<=', $date)
                             ->sum('amount');
-                    })
-                    ->toArray();
-
-                return Stat::make(str($category)->headline(), Number::currency($balance, $currencyRepository->localCurrency))
-                    ->chart($chartData)
-                    ->color('success')
-                    ->extraAttributes(['class' => 'whitespace-normal break-words']);
-            })
-            ->filter()
-            ->toArray();
+                    });
+                })
+                ->toArray();
+    
+            // Return a stat block for the category
+            return Stat::make(str($category)->headline(), Number::currency($balance, $currencyRepository->localCurrency))
+                ->chart($chartData)
+                ->color('success')
+                ->extraAttributes(['class' => 'whitespace-normal break-words']);
+        })
+        ->filter()
+        ->toArray();
     }
 }

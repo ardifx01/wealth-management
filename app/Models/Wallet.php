@@ -42,7 +42,7 @@ class Wallet extends Model
         if ($this->currency === $currencyRepository->localCurrency) {
             return $this->balance;
         }
-
+        
         return $currencyRepository->convert($this->balance, $this->currency, $currencyRepository->localCurrency);
     }
 

@@ -10,6 +10,7 @@ use App\Models\Wallet;
 use Filament\Forms\Contracts\HasForms;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use App\Repositories\CurrencyRepository;
 
 class UserTransactionCompareChart extends ChartWidget
 {
@@ -78,46 +79,72 @@ class UserTransactionCompareChart extends ChartWidget
     }
 
     protected function getChartData(): array
-    {
-        $user = Auth::user();
-        $walletIds = Wallet::where('user_id', $user->id)->pluck('id');
-        $query = Transaction::whereIn('wallet_id', $walletIds)->whereNull('reference_id');
-
-        if (!$this->filter) {
-            $this->filter = Session::get('chart_balance', 'daily');
-        } else {
-            Session::put('chart_balance', $this->filter);
-        }
-
-        $type = $this->filter;
-        $date = now();
-
-        // Apply date filters based on selected period
-        if ($type === 'daily') {
-            $start = $date->copy()->subDays(29)->startOfDay();
-            $query->whereDate('created_at', '>=', $start);
-        } elseif ($type === 'weekly') {
-            $start = $date->copy()->subDays(6)->startOfDay();
-            $query->whereDate('created_at', '>=', $start);
-        } elseif ($type === 'monthly') {
-            $start = $date->copy()->subYear();
-            $query->whereDate('created_at', '>=', $start);
-        } elseif ($type === 'ytd') {
-            $start = $date->copy()->startOfYear();
-            $query->whereDate('created_at', '>=', $start);
-        }
-        // For 'all', no date filter is applied
-
-        $transactions = $query->get();
-
-        $totalIncome = $transactions->where('type', 'income')->sum('amount');
-        $totalExpense = $transactions->where('type', 'expense')->sum('amount');
-
-        return [
-            'income' => $totalIncome,
-            'expense' => $totalExpense,
-        ];
-    }
+  {
+      $user = Auth::user();
+      $currencyRepository = app(CurrencyRepository::class);
+      $baseCurrency = $currencyRepository->localCurrency;
+  
+      // Get user's wallet IDs
+      $walletIds = Wallet::where('user_id', $user->id)->pluck('id');
+  
+      // Base transaction query
+      $query = Transaction::whereIn('wallet_id', $walletIds)->with('wallet');
+  
+      // Session-based filter
+      $this->filter = $this->filter ?? Session::get('chart_balance', 'daily');
+      Session::put('chart_balance', $this->filter);
+  
+      $date = now();
+  
+      switch ($this->filter) {
+          case 'daily':
+              $query->whereDate('created_at', '>=', $date->copy()->subDays(29)->startOfDay());
+              break;
+          case 'weekly':
+              $query->whereDate('created_at', '>=', $date->copy()->subDays(6)->startOfDay());
+              break;
+          case 'monthly':
+              $query->whereDate('created_at', '>=', $date->copy()->subYear());
+              break;
+          case 'ytd':
+              $query->whereDate('created_at', '>=', $date->copy()->startOfYear());
+              break;
+      }
+  
+      $transactions = $query->get();
+  
+      // Find transfer parents (referenced by child transactions)
+      $childRefs = $transactions
+          ->whereNotNull('reference_id')
+          ->pluck('reference_id')
+          ->unique();
+  
+      // Only include external transactions
+      $externalTransactions = $transactions->filter(function ($tx) use ($childRefs) {
+          return is_null($tx->reference_id) && !$childRefs->contains($tx->id);
+      });
+  
+      // Sum income with currency conversion
+      $totalIncome = $externalTransactions
+          ->where('type', 'income')
+          ->sum(function ($tx) use ($currencyRepository, $baseCurrency) {
+              $fromCurrency = $tx->wallet->currency ?? $baseCurrency;
+              return $currencyRepository->convert($tx->amount, $fromCurrency, $baseCurrency);
+          });
+  
+      // Sum expense with currency conversion
+      $totalExpense = $externalTransactions
+          ->where('type', 'expense')
+          ->sum(function ($tx) use ($currencyRepository, $baseCurrency) {
+              $fromCurrency = $tx->wallet->currency ?? $baseCurrency;
+              return $currencyRepository->convert($tx->amount, $fromCurrency, $baseCurrency);
+          });
+  
+      return [
+          'income' => $totalIncome,
+          'expense' => $totalExpense,
+      ];
+  }
 
     protected function getData(): array
     {

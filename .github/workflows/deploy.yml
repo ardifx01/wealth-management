@@ -70,7 +70,6 @@ jobs:
             cd ${DEPLOY_PATH}
 
             # Enter maintenance mode
-            cp .env.production .env
             php artisan down || true
 
             echo "==> Installing Composer dependencies..."

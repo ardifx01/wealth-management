@@ -61,11 +61,6 @@ jobs:
 
             echo "==> Starting deployment to ${DEPLOY_PATH}"
 
-            # Enter maintenance mode
-            cd ${DEPLOY_PATH}
-            cp .env.production .env
-            php artisan down || true
-
             # Extract the archive into the deployment directory
             # The -C flag tells tar to change to that directory before extracting
             echo "==> Extracting files..."
@@ -73,6 +68,10 @@ jobs:
 
             # Run deployment commands from within the application directory
             cd ${DEPLOY_PATH}
+
+            # Enter maintenance mode
+            cp .env.production .env
+            php artisan down || true
 
             echo "==> Installing Composer dependencies..."
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction

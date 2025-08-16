@@ -8,7 +8,7 @@
 
     <meta property="og:title" content="Aplikasi Keuangan Terbaik untuk Mengelola Uang">
     <meta property="og:description" content="Mencatat pengeluaran, mengatur anggaran, dan mengelola keuangan pribadi dengan mudah. Unduh aplikasi keuangan kami sekarang!">
-    <meta property="og:image" content="https://wm.fiandev.com/images/og-image.jpg">
+    <meta property="og:image" content="https://wm.fiandev.com/icon.jpg">
     <meta property="og:url" content="https://wm.fiandev.com/">
     <meta property="og:type" content="website">
 

@@ -68,6 +68,7 @@ jobs:
 
             # Run deployment commands from within the application directory
             cd ${DEPLOY_PATH}
+            cp ./public/* ./public_html -r
 
             # Enter maintenance mode
             php artisan down || true

@@ -31,7 +31,7 @@ jobs:
 
       - name: Create Deployment Archive
         # The archive name is now a variable for consistency
-        run: tar czf ${{ env.ARCHIVE_NAME }} .
+        run: tar czf ${{ env.ARCHIVE_NAME }} . --ignore-failed-read
 
       - name: Copy Archive to Server
         uses: appleboy/scp-action@v0.1.4
@@ -63,6 +63,7 @@ jobs:
 
             # Enter maintenance mode
             cd ${DEPLOY_PATH}
+            cp .env.production .env
             php artisan down || true
 
             # Extract the archive into the deployment directory
@@ -88,8 +89,8 @@ jobs:
             php artisan route:cache
             php artisan view:cache
 
-            echo "==> Running database migrations..."
-            php artisan migrate --force
+            echo "==> Running new database migrations..."
+            php artisan migrate
 
             # Exit maintenance mode
             php artisan up

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     # Define environment variables for the entire job
     env:
-      DEPLOY_PATH: /var/www/wm.fiandev.com/public_html
+      DEPLOY_PATH: /var/www/wm.fiandev.com/
       ARCHIVE_NAME: deploy.tar.gz
 
     steps:

@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\WalletResource\Pages;
 
 use App\Filament\Resources\WalletResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Actions;
 use Illuminate\Support\Facades\Auth;
 
 class CreateWallet extends CreateRecord
@@ -15,5 +15,10 @@ class CreateWallet extends CreateRecord
     {
         $data['user_id'] = Auth::user()->id;
         return $data;
+    }
+
+    protected function getCreateAnotherFormAction(): Actions\Action
+    {
+        return parent::getCreateAnotherFormAction()->hidden();
     }
 }

@@ -16,4 +16,9 @@ class CreateRecurring extends CreateRecord
         $data['user_id'] = Auth::user()->id;
         return $data;
     }
+
+    protected function getCreateAnotherFormAction(): Actions\Action
+    {
+        return parent::getCreateAnotherFormAction()->hidden();
+    }
 }

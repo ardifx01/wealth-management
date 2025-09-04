@@ -1,5 +1,5 @@
-// document.addEventListener('livewire:init', () => {
-//     Livewire.on('currencyChanged', (event) => {
-//         window.location.reload();
-//     });
-// });
+document.addEventListener('livewire:init', () => {
+    Livewire.on('currencyChanged', (event) => {
+        window.location.reload();
+    });
+});

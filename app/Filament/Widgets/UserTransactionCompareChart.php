@@ -2,19 +2,19 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Components\Select;
-use Filament\Widgets\ChartWidget;
 use App\Models\Transaction;
 use App\Models\Wallet;
+use App\Repositories\CurrencyRepository;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-use App\Repositories\CurrencyRepository;
+use Illuminate\Support\Number;
 
 class UserTransactionCompareChart extends ChartWidget
 {
-
     protected static ?string $heading = 'Perbandingan Income vs Expense';
     public ?string $type = '';
     public string $chartType = 'doughnut';
@@ -56,14 +56,14 @@ class UserTransactionCompareChart extends ChartWidget
         $netBalance = $totalIncome - $totalExpense;
 
         if ($totalIncome == 0 && $totalExpense == 0) {
-            return "Tidak ada transaksi dalam periode ini.";
+            return 'Tidak ada transaksi dalam periode ini.';
         }
 
         $incomePercentage = $totalIncome > 0 ? round(($totalIncome / ($totalIncome + $totalExpense)) * 100, 1) : 0;
         $expensePercentage = $totalExpense > 0 ? round(($totalExpense / ($totalIncome + $totalExpense)) * 100, 1) : 0;
 
-        $status = $netBalance >= 0 ? "surplus" : "defisit";
-        $statusAmount = "Rp " . number_format(abs($netBalance), 0, ',', '.');
+        $status = $netBalance >= 0 ? 'surplus' : 'defisit';
+        $statusAmount = Number::currency($netBalance, app(CurrencyRepository::class)->localCurrency);
 
         return "Income: {$incomePercentage}% | Expense: {$expensePercentage}% | Net {$status}: {$statusAmount}";
     }
@@ -79,72 +79,72 @@ class UserTransactionCompareChart extends ChartWidget
     }
 
     protected function getChartData(): array
-  {
-      $user = Auth::user();
-      $currencyRepository = app(CurrencyRepository::class);
-      $baseCurrency = $currencyRepository->localCurrency;
-  
-      // Get user's wallet IDs
-      $walletIds = Wallet::where('user_id', $user->id)->pluck('id');
-  
-      // Base transaction query
-      $query = Transaction::whereIn('wallet_id', $walletIds)->with('wallet');
-  
-      // Session-based filter
-      $this->filter = $this->filter ?? Session::get('chart_balance', 'daily');
-      Session::put('chart_balance', $this->filter);
-  
-      $date = now();
-  
-      switch ($this->filter) {
-          case 'daily':
-              $query->whereDate('created_at', '>=', $date->copy()->subDays(29)->startOfDay());
-              break;
-          case 'weekly':
-              $query->whereDate('created_at', '>=', $date->copy()->subDays(6)->startOfDay());
-              break;
-          case 'monthly':
-              $query->whereDate('created_at', '>=', $date->copy()->subYear());
-              break;
-          case 'ytd':
-              $query->whereDate('created_at', '>=', $date->copy()->startOfYear());
-              break;
-      }
-  
-      $transactions = $query->get();
-  
-      // Find transfer parents (referenced by child transactions)
-      $childRefs = $transactions
-          ->whereNotNull('reference_id')
-          ->pluck('reference_id')
-          ->unique();
-  
-      // Only include external transactions
-      $externalTransactions = $transactions->filter(function ($tx) use ($childRefs) {
-          return is_null($tx->reference_id) && !$childRefs->contains($tx->id);
-      });
-  
-      // Sum income with currency conversion
-      $totalIncome = $externalTransactions
-          ->where('type', 'income')
-          ->sum(function ($tx) use ($currencyRepository, $baseCurrency) {
-              $fromCurrency = $tx->wallet->currency ?? $baseCurrency;
-              return $currencyRepository->convert($tx->amount, $fromCurrency, $baseCurrency);
-          });
-  
-      // Sum expense with currency conversion
-      $totalExpense = $externalTransactions
-          ->where('type', 'expense')
-          ->sum(function ($tx) use ($currencyRepository, $baseCurrency) {
-              $fromCurrency = $tx->wallet->currency ?? $baseCurrency;
-              return $currencyRepository->convert($tx->amount, $fromCurrency, $baseCurrency);
-          });
-  
-      return [
-          'income' => $totalIncome,
-          'expense' => $totalExpense,
-      ];
-  }
+    {
+        $user = Auth::user();
+        $currencyRepository = app(CurrencyRepository::class);
+        $baseCurrency = $currencyRepository->localCurrency;
+
+        // Get user's wallet IDs
+        $walletIds = Wallet::where('user_id', $user->id)->pluck('id');
+
+        // Base transaction query
+        $query = Transaction::whereIn('wallet_id', $walletIds)->with('wallet');
+
+        // Session-based filter
+        $this->filter = $this->filter ?? Session::get('chart_balance', 'daily');
+        Session::put('chart_balance', $this->filter);
+
+        $date = now();
+
+        switch ($this->filter) {
+            case 'daily':
+                $query->whereDate('created_at', '>=', $date->copy()->subDays(29)->startOfDay());
+                break;
+            case 'weekly':
+                $query->whereDate('created_at', '>=', $date->copy()->subDays(6)->startOfDay());
+                break;
+            case 'monthly':
+                $query->whereDate('created_at', '>=', $date->copy()->subYear());
+                break;
+            case 'ytd':
+                $query->whereDate('created_at', '>=', $date->copy()->startOfYear());
+                break;
+        }
+
+        $transactions = $query->get();
+
+        // Find transfer parents (referenced by child transactions)
+        $childRefs = $transactions
+            ->whereNotNull('reference_id')
+            ->pluck('reference_id')
+            ->unique();
+
+        // Only include external transactions
+        $externalTransactions = $transactions->filter(function ($tx) use ($childRefs) {
+            return is_null($tx->reference_id) && !$childRefs->contains($tx->id);
+        });
+
+        // Sum income with currency conversion
+        $totalIncome = $externalTransactions
+            ->where('type', 'income')
+            ->sum(function ($tx) use ($currencyRepository, $baseCurrency) {
+                $fromCurrency = $tx->wallet->currency ?? $baseCurrency;
+                return $currencyRepository->convert($tx->amount, $fromCurrency, $baseCurrency);
+            });
+
+        // Sum expense with currency conversion
+        $totalExpense = $externalTransactions
+            ->where('type', 'expense')
+            ->sum(function ($tx) use ($currencyRepository, $baseCurrency) {
+                $fromCurrency = $tx->wallet->currency ?? $baseCurrency;
+                return $currencyRepository->convert($tx->amount, $fromCurrency, $baseCurrency);
+            });
+
+        return [
+            'income' => $totalIncome,
+            'expense' => $totalExpense,
+        ];
+    }
 
     protected function getData(): array
     {
@@ -176,14 +176,14 @@ class UserTransactionCompareChart extends ChartWidget
         if ($totalIncome > 0) {
             $chartData[] = $totalIncome;
             $labels[] = 'Income';
-            $backgroundColors[] = '#10b981'; // Green
+            $backgroundColors[] = '#10b981';  // Green
             $borderColors[] = '#059669';
         }
 
         if ($totalExpense > 0) {
             $chartData[] = $totalExpense;
             $labels[] = 'Expense';
-            $backgroundColors[] = '#f59e0b'; // Orange/Yellow
+            $backgroundColors[] = '#f59e0b';  // Orange/Yellow
             $borderColors[] = '#d97706';
         }
 

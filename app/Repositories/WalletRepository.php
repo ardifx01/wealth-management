@@ -8,9 +8,7 @@ use Illuminate\Support\Facades\Cache;
 
 class WalletRepository
 {
-    public function __construct(
-        private Wallet $wallet
-    ) {}
+    public function __construct(private Wallet $wallet) {}
 
     public function all()
     {
@@ -19,22 +17,23 @@ class WalletRepository
 
     public function getByUser(User $user)
     {
-        return Cache::forever(sprintf("user_wallets_%s", $user->id), function () use ($user) {
-            return $this->wallet->where('user_id', $user->id)->get();
-        });
+        return Cache::forever(
+            sprintf("user_wallets_%s", $user->id),
+            fn() => $user->wallets()->get(),
+        );
     }
 
-    public static function refreshUserWallets(User $user)
+    public static function refreshUserWallets(User $user): void
     {
         Cache::forget(sprintf("user_wallets_%s", $user->id));
     }
-    
-    public static function refreshWalletById (int $walletId)
+
+    public static function refreshWalletById(int $walletId)
     {
         Cache::forget(sprintf("balances.wallet.%s", $walletId));
     }
 
-    public function store(array $data)
+    public function store(mixed $data)
     {
         return $this->wallet->create($data);
     }

@@ -19,13 +19,12 @@ class Transaction extends Model
     {
         return $this->belongsTo(Wallet::class);
     }
-    
+
     public static function boot()
     {
         parent::boot();
 
         static::deleting(function ($trx) {
-            $trx->wallet->delete();
             WalletRepository::refreshUserWallets($trx->wallet->user);
             WalletRepository::refreshWalletById($trx->wallet->id);
         });

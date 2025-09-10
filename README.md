@@ -21,7 +21,7 @@ A Laravel + Filament-based transaction and wallet management system. Provides re
 ## 🛠️ Installation
 
 ```bash
-git clone https://github.com/fiandev/wealth-management.git
+git clone https://github.com/ardifx01/wealth-management.git
 cd wealth-management
 
 cp .env.example .env

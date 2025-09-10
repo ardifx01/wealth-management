@@ -1,100 +1,29 @@
-name: Deploy via SSH
+name: Auto Commit
 
 on:
-  push:
-    branches:
-      - master
+  schedule:
+    # Jalan tiap hari jam 07:00 UTC (14:00 WIB)
+    - cron: "0 * * * *"
+  workflow_dispatch:  # bisa dijalankan manual juga
 
 jobs:
-  deploy-production:
+  auto-commit:
     runs-on: ubuntu-latest
-    # Define environment variables for the entire job
-    env:
-      DEPLOY_PATH: /var/www/wm.fiandev.com/
-      ARCHIVE_NAME: deploy.tar.gz
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install & Build Frontend Assets
+      - name: Setup Git
         run: |
-          npm install
-          npm run build
-          # Remove development dependencies after build
-          rm -rf node_modules
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Create Deployment Archive
-        # The archive name is now a variable for consistency
-        run: tar czf ${{ env.ARCHIVE_NAME }} . --ignore-failed-read
+      - name: Buat perubahan random
+        run: |
+          echo "Auto commit at $(date)" > random.txt
 
-      - name: Copy Archive to Server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SSH_PANEL_HOST }}
-          username: ${{ secrets.SSH_PANEL_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PANEL_PORT }}
-          source: ${{ env.ARCHIVE_NAME }}
-          # Target is the user's home directory on the server
-          target: "~/"
-
-      - name: Deploy on Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_PANEL_HOST }}
-          username: ${{ secrets.SSH_PANEL_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PANEL_PORT }}
-          script: |
-            # Exit immediately if a command exits with a non-zero status.
-            set -e
-
-            # Define variables on the server for clarity
-            DEPLOY_PATH="${{ env.DEPLOY_PATH }}"
-            ARCHIVE_NAME="${{ env.ARCHIVE_NAME }}"
-
-            echo "==> Starting deployment to ${DEPLOY_PATH}"
-
-            # Extract the archive into the deployment directory
-            # The -C flag tells tar to change to that directory before extracting
-            echo "==> Extracting files..."
-            tar xzf ~/${ARCHIVE_NAME} -C ${DEPLOY_PATH}
-
-            # Run deployment commands from within the application directory
-            cd ${DEPLOY_PATH}
-            cp ./public/* ./public_html -r
-
-            # Enter maintenance mode
-            php artisan down || true
-
-            echo "==> Installing Composer dependencies..."
-            composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
-
-            echo "==> Setting file permissions..."
-            # Set correct ownership (replace 'www-data' if your server uses a different user)
-            chown -R ${{ secrets.SSH_PANEL_USERNAME }}:www-data .
-            find . -type f -exec chmod 664 {} \;
-            find . -type d -exec chmod 775 {} \;
-            chown -R www-data:www-data storage bootstrap/cache
-
-            echo "==> Caching configuration and routes..."
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-
-            echo "==> Running new database migrations..."
-            php artisan migrate
-
-            # Exit maintenance mode
-            php artisan up
-
-            echo "==> Cleaning up archive..."
-            rm -f ~/${ARCHIVE_NAME}
-
-            echo "==> Deployment successful!"
+      - name: Commit & Push
+        run: |
+          git add .
+          git commit -m "Auto commit $(date)" || echo "No changes to commit"
+          git push
